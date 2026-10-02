@@ -12,7 +12,7 @@ export interface Lecture {
   summary?: string;
   key_concepts: string[];
   action_items: TaskItem[];
-  status: "processed" | "processing" | "pending";
+  status: "processed" | "processing" | "pending" | "ai_failed";
   created_at: string;
   updated_at: string;
 }

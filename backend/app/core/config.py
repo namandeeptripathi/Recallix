@@ -20,9 +20,10 @@ class Settings(BaseSettings):
     # SQLite Database File Path (resolves reliably regardless of invocation directory)
     SQLITE_DB_PATH: str = os.getenv("SQLITE_DB_PATH", str(BASE_DIR / "recallix.db"))
     
-    # Ollama Configuration (for upcoming AI features)
+    # Ollama Configuration
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "gemma:2b")
+    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "gemma3:1b")
+    OLLAMA_TIMEOUT_SECONDS: int = int(os.getenv("OLLAMA_TIMEOUT_SECONDS", "120"))
 
     model_config = SettingsConfigDict(
         case_sensitive=True,
