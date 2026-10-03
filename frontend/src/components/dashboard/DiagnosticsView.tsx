@@ -11,7 +11,7 @@ import {
   Server,
   RefreshCw,
   Code,
-  ShieldCheck,
+  Gauge,
 } from "lucide-react";
 
 interface Props {
@@ -19,34 +19,37 @@ interface Props {
   onRefresh: () => void;
 }
 
-export const DiagnosticsView: React.FC<Props> = ({
-  backendStatus,
-  onRefresh,
-}) => {
-  const isHealthy =
-    backendStatus.healthy && backendStatus.data?.status === "ok";
+export const DiagnosticsView: React.FC<Props> = ({ backendStatus, onRefresh }) => {
+  const isHealthy = backendStatus.healthy && backendStatus.data?.status === "ok";
+  const StatusIcon = isHealthy ? CheckCircle2 : AlertCircle;
+  const statusColor = isHealthy ? "var(--success)" : "var(--error)";
+  const statusBg = isHealthy ? "var(--success-bg)" : "var(--error-bg)";
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="p-6 rounded-2xl glass-panel border border-slate-800/80">
+    <div className="space-y-4">
+
+      {/* Banner */}
+      <div
+        className="p-5 rounded-xl"
+        style={{
+          backgroundColor: "var(--bg-card)",
+          border: "1px solid var(--border-base)",
+        }}
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div
-              className={`p-3 rounded-2xl ${
-                isHealthy
-                  ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
-                  : "bg-rose-500/10 border border-rose-500/30 text-rose-400"
-              }`}
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: statusBg, color: statusColor }}
             >
-              <Activity className="w-6 h-6" />
+              <Activity className="w-5 h-5" strokeWidth={2} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">
+              <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
                 FastAPI & SQLite Diagnostics
               </h2>
-              <p className="text-xs text-slate-400">
-                Live monitoring connection between Next.js client and FastAPI server.
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                Live monitoring between Next.js client and FastAPI server.
               </p>
             </div>
           </div>
@@ -54,99 +57,107 @@ export const DiagnosticsView: React.FC<Props> = ({
           <button
             onClick={onRefresh}
             disabled={backendStatus.loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 transition-all cursor-pointer"
+            className="btn-secondary flex items-center gap-2 px-3.5 py-2 text-xs disabled:opacity-50"
           >
-            <RefreshCw
-              className={`w-4 h-4 ${
-                backendStatus.loading ? "animate-spin" : ""
-              }`}
-            />
-            <span>Ping Backend Now</span>
+            <RefreshCw className={`w-4 h-4 ${backendStatus.loading ? "animate-spin" : ""}`} />
+            <span>Ping Backend</span>
           </button>
         </div>
       </div>
 
-      {/* Grid of indicators */}
+      {/* Indicator cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Status */}
-        <div className="p-5 rounded-2xl glass-panel border border-slate-800/80 space-y-2">
-          <div className="flex items-center justify-between text-xs text-slate-400">
+
+        <div
+          className="p-5 rounded-xl space-y-2"
+          style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-base)" }}
+        >
+          <div className="flex items-center justify-between text-xs" style={{ color: "var(--text-muted)" }}>
             <span>FastAPI Server</span>
-            <Server className="w-4 h-4 text-indigo-400" />
+            <Server className="w-4 h-4" style={{ color: "var(--accent)" }} />
           </div>
           <div className="flex items-center gap-2">
-            {isHealthy ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-            ) : (
-              <AlertCircle className="w-5 h-5 text-rose-400" />
-            )}
+            <StatusIcon className="w-5 h-5" style={{ color: statusColor }} />
             <span
-              className={`text-lg font-bold uppercase tracking-wide ${
-                isHealthy ? "text-emerald-400" : "text-rose-400"
-              }`}
+              className="text-lg font-semibold uppercase tracking-wide"
+              style={{ color: statusColor }}
             >
               {backendStatus.data?.status || (backendStatus.loading ? "Checking" : "Offline")}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400">
-            {backendStatus.data?.service || "FastAPI Backend"} (v
-            {backendStatus.data?.version || "0.1.0"})
+          <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+            {backendStatus.data?.service || "FastAPI Backend"} (v{backendStatus.data?.version || "0.1.0"})
           </p>
         </div>
 
-        {/* Database */}
-        <div className="p-5 rounded-2xl glass-panel border border-slate-800/80 space-y-2">
-          <div className="flex items-center justify-between text-xs text-slate-400">
+        <div
+          className="p-5 rounded-xl space-y-2"
+          style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-base)" }}
+        >
+          <div className="flex items-center justify-between text-xs" style={{ color: "var(--text-muted)" }}>
             <span>Database Storage</span>
-            <Database className="w-4 h-4 text-cyan-400" />
+            <Database className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-white">
+          <div>
+            <span className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
               {backendStatus.data?.database || "SQLite"}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400">
-            Local SQLite persistence with schema validation via Pydantic.
+          <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+            Local SQLite · schema validated via Pydantic.
           </p>
         </div>
 
-        {/* Latency & Uptime */}
-        <div className="p-5 rounded-2xl glass-panel border border-slate-800/80 space-y-2">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Network Latency</span>
-            <ShieldCheck className="w-4 h-4 text-purple-400" />
+        <div
+          className="p-5 rounded-xl space-y-2"
+          style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-base)" }}
+        >
+          <div className="flex items-center justify-between text-xs" style={{ color: "var(--text-muted)" }}>
+            <span>Latency</span>
+            <Gauge className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-indigo-300 font-mono">
-              {backendStatus.latencyMs !== undefined
-                ? `${backendStatus.latencyMs} ms`
-                : "--"}
+          <div>
+            <span className="text-lg font-semibold font-mono" style={{ color: "var(--accent)" }}>
+              {backendStatus.latencyMs !== undefined ? `${backendStatus.latencyMs} ms` : "—"}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
             Uptime:{" "}
             {backendStatus.data?.uptime_seconds !== undefined
               ? formatUptime(backendStatus.data.uptime_seconds)
-              : "--"}
+              : "—"}
           </p>
         </div>
       </div>
 
-      {/* Raw Health JSON Response */}
-      <div className="p-5 rounded-2xl glass-panel border border-slate-800/80">
+      {/* Raw JSON */}
+      <div
+        className="p-5 rounded-xl"
+        style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-base)" }}
+      >
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
-            <Code className="w-4 h-4 text-indigo-400" />
-            <span>Raw Response from GET /api/v1/health</span>
+          <div
+            className="flex items-center gap-2 text-xs font-medium"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <Code className="w-4 h-4" style={{ color: "var(--accent)" }} />
+            <span>Raw response — GET /api/v1/health</span>
           </div>
-          <span className="text-[11px] font-mono text-slate-500">
+          <span className="text-[11px] font-mono" style={{ color: "var(--text-muted)" }}>
             {backendStatus.lastChecked
-              ? `Last tested ${backendStatus.lastChecked.toLocaleTimeString()}`
+              ? `Last checked ${backendStatus.lastChecked.toLocaleTimeString()}`
               : ""}
           </span>
         </div>
 
-        <pre className="p-4 rounded-xl bg-slate-950/80 border border-slate-800/80 font-mono text-xs text-emerald-400 overflow-x-auto">
+        <pre
+          className="p-4 rounded-lg font-mono text-xs overflow-x-auto"
+          style={{
+            backgroundColor: "var(--bg-overlay)",
+            border: "1px solid var(--border-subtle)",
+            color: "var(--success)",
+          }}
+        >
           {JSON.stringify(
             backendStatus.data || {
               status: "disconnected",

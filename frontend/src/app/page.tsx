@@ -17,7 +17,6 @@ import {
   toggleTaskCompletion,
 } from "@/lib/api";
 import {
-  Sparkles,
   BookOpen,
   CheckCircle2,
   Circle,
@@ -25,8 +24,107 @@ import {
   RefreshCw,
   AlertCircle,
   ArrowRight,
-  Brain,
+  MessageSquareText,
+  ListTodo,
+  Layers,
 } from "lucide-react";
+
+// ─── Static sub-components (declared outside render) ──────────────────────────
+
+function EmptyLectures({ onAdd }: { onAdd?: () => void }) {
+  return (
+    <div
+      className="py-12 px-6 text-center rounded-xl"
+      style={{
+        backgroundColor: "var(--bg-card)",
+        border: "1px solid var(--border-base)",
+      }}
+    >
+      <div
+        className="w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center"
+        style={{ backgroundColor: "var(--accent-subtle)", color: "var(--accent)" }}
+      >
+        <Layers className="w-6 h-6" strokeWidth={1.5} />
+      </div>
+      <p className="text-sm font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+        No lecture notes yet
+      </p>
+      <p className="text-xs leading-relaxed mb-5" style={{ color: "var(--text-muted)" }}>
+        Paste or upload your first lecture transcript to begin generating structured summaries.
+      </p>
+      {onAdd && (
+        <button
+          onClick={onAdd}
+          className="btn-primary inline-flex items-center gap-1.5 px-4 py-2 text-xs"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Add First Lecture
+        </button>
+      )}
+    </div>
+  );
+}
+
+function LoadingSlot() {
+  return (
+    <div
+      className="py-10 text-center rounded-xl"
+      style={{
+        backgroundColor: "var(--bg-card)",
+        border: "1px solid var(--border-base)",
+      }}
+    >
+      <RefreshCw
+        className="w-5 h-5 animate-spin mx-auto mb-2.5"
+        style={{ color: "var(--accent)" }}
+      />
+      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+        Loading lecture notes…
+      </p>
+    </div>
+  );
+}
+
+function SectionHeader({
+  label,
+  icon: Icon,
+  action,
+  actionLabel,
+}: {
+  label: string;
+  icon: React.ElementType;
+  action?: () => void;
+  actionLabel?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center gap-2">
+        <Icon className="w-4 h-4" style={{ color: "var(--accent)" }} strokeWidth={2} />
+        <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+          {label}
+        </span>
+      </div>
+      {action && actionLabel && (
+        <button
+          onClick={action}
+          className="flex items-center gap-1 text-xs cursor-pointer transition-colors"
+          style={{ color: "var(--text-muted)" }}
+          onMouseEnter={(e) =>
+            ((e.currentTarget as HTMLElement).style.color = "var(--accent)")
+          }
+          onMouseLeave={(e) =>
+            ((e.currentTarget as HTMLElement).style.color = "var(--text-muted)")
+          }
+        >
+          <span>{actionLabel}</span>
+          <ArrowRight className="w-3 h-3" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Dashboard ────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
@@ -34,35 +132,23 @@ export default function DashboardPage() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isSubmittingLecture, setIsSubmittingLecture] = useState(false);
 
-  // Backend Health State (initialized with loading: true)
   const [backendStatus, setBackendStatus] = useState<BackendStatusState>({
     healthy: false,
     loading: true,
   });
-
-  // Lectures State
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [loadingLectures, setLoadingLectures] = useState(true);
   const [lecturesError, setLecturesError] = useState<string | null>(null);
 
-  // Health ping callback
   const pingHealth = useCallback(async () => {
     try {
       const { data, latencyMs } = await checkBackendHealth();
-      setBackendStatus({
-        healthy: data.status === "ok",
-        loading: false,
-        latencyMs,
-        data,
-        lastChecked: new Date(),
-      });
+      setBackendStatus({ healthy: data.status === "ok", loading: false, latencyMs, data, lastChecked: new Date() });
     } catch (err: unknown) {
-      const errorMsg =
-        err instanceof Error ? err.message : "Failed to reach backend";
       setBackendStatus({
         healthy: false,
         loading: false,
-        error: errorMsg,
+        error: err instanceof Error ? err.message : "Failed to reach backend",
         lastChecked: new Date(),
       });
     }
@@ -73,16 +159,13 @@ export default function DashboardPage() {
     pingHealth();
   }, [pingHealth]);
 
-  // Fetch Lectures callback
   const loadLecturesData = useCallback(async () => {
     try {
       setLecturesError(null);
       const data = await fetchLectures();
       setLectures(data);
     } catch (err: unknown) {
-      const errorMsg =
-        err instanceof Error ? err.message : "Could not load lectures";
-      setLecturesError(errorMsg);
+      setLecturesError(err instanceof Error ? err.message : "Could not load lectures");
     } finally {
       setLoadingLectures(false);
     }
@@ -94,22 +177,11 @@ export default function DashboardPage() {
     checkBackendHealth()
       .then(({ data, latencyMs }) => {
         if (!active) return;
-        setBackendStatus({
-          healthy: data.status === "ok",
-          loading: false,
-          latencyMs,
-          data,
-          lastChecked: new Date(),
-        });
+        setBackendStatus({ healthy: data.status === "ok", loading: false, latencyMs, data, lastChecked: new Date() });
       })
       .catch((err: unknown) => {
         if (!active) return;
-        setBackendStatus({
-          healthy: false,
-          loading: false,
-          error: err instanceof Error ? err.message : "Failed to reach backend",
-          lastChecked: new Date(),
-        });
+        setBackendStatus({ healthy: false, loading: false, error: err instanceof Error ? err.message : "Failed to reach backend", lastChecked: new Date() });
       });
 
     fetchLectures()
@@ -120,24 +192,14 @@ export default function DashboardPage() {
       })
       .catch((err: unknown) => {
         if (!active) return;
-        setLecturesError(
-          err instanceof Error ? err.message : "Could not load lectures"
-        );
+        setLecturesError(err instanceof Error ? err.message : "Could not load lectures");
         setLoadingLectures(false);
       });
 
-    // Auto-ping every 20 seconds
-    const interval = setInterval(() => {
-      pingHealth();
-    }, 20000);
-
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
+    const interval = setInterval(pingHealth, 20000);
+    return () => { active = false; clearInterval(interval); };
   }, [pingHealth]);
 
-  // Handle Create Lecture
   const handleCreateLecture = async (input: CreateLectureInput) => {
     setIsSubmittingLecture(true);
     try {
@@ -149,44 +211,23 @@ export default function DashboardPage() {
     }
   };
 
-  // Handle Task Toggle
-  const handleToggleTask = async (
-    lectureId: string,
-    taskId: string,
-    completed: boolean
-  ) => {
-    // Optimistic UI update
+  const handleToggleTask = async (lectureId: string, taskId: string, completed: boolean) => {
     setLectures((prev) =>
-      prev.map((lec) => {
-        if (lec.id === lectureId) {
-          return {
-            ...lec,
-            action_items: lec.action_items.map((item) =>
-              item.id === taskId ? { ...item, completed } : item
-            ),
-          };
-        }
-        return lec;
-      })
+      prev.map((lec) =>
+        lec.id === lectureId
+          ? { ...lec, action_items: lec.action_items.map((item) => item.id === taskId ? { ...item, completed } : item) }
+          : lec
+      )
     );
-
     try {
       const updated = await toggleTaskCompletion(lectureId, taskId, completed);
-      setLectures((prev) =>
-        prev.map((lec) => (lec.id === lectureId ? updated : lec))
-      );
+      setLectures((prev) => prev.map((lec) => (lec.id === lectureId ? updated : lec)));
     } catch (err) {
       console.error("Task toggle failed:", err);
-      // Revert on error
       loadLecturesData();
     }
   };
 
-  const handleAskQuestionFromLecture = () => {
-    setActiveTab("chat");
-  };
-
-  // Filtered lectures for search
   const filteredLectures = lectures.filter((lec) => {
     const q = searchQuery.toLowerCase();
     return (
@@ -197,20 +238,18 @@ export default function DashboardPage() {
     );
   });
 
-  // Calculate statistics
   const totalLectures = lectures.length;
-  const totalConcepts = lectures.reduce(
-    (acc, curr) => acc + (curr.key_concepts?.length || 0),
-    0
-  );
+  const totalConcepts = lectures.reduce((acc, curr) => acc + (curr.key_concepts?.length || 0), 0);
   const allTasks = lectures.flatMap((l) => l.action_items || []);
   const totalTasks = allTasks.length;
   const completedTasks = allTasks.filter((t) => t.completed).length;
   const pendingTasks = allTasks.filter((t) => !t.completed);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
-      {/* Top Navbar */}
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundColor: "var(--bg-base)", color: "var(--text-primary)" }}
+    >
       <Navbar
         backendStatus={backendStatus}
         onRefreshHealth={handleManualRefresh}
@@ -219,10 +258,8 @@ export default function DashboardPage() {
         onSearchChange={setSearchQuery}
       />
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left Sidebar */}
           <Sidebar
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -230,65 +267,110 @@ export default function DashboardPage() {
             pendingTasksCount={pendingTasks.length}
           />
 
-          {/* Right Main Body */}
-          <div className="flex-1 space-y-6">
-            {/* Error banner if backend failed */}
+          <div className="flex-1 min-w-0 space-y-5">
+
+            {/* Error banner */}
             {lecturesError && (
-              <div className="p-4 rounded-2xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between">
+              <div
+                className="px-4 py-3 rounded-xl flex items-center justify-between text-xs"
+                style={{
+                  backgroundColor: "var(--error-bg)",
+                  border: "1px solid rgba(194,96,96,0.25)",
+                  color: "var(--error)",
+                }}
+              >
                 <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{lecturesError}</span>
                 </div>
                 <button
                   onClick={loadLecturesData}
-                  className="px-2.5 py-1 rounded-lg bg-rose-900/60 hover:bg-rose-900 text-white font-medium transition-colors"
+                  className="px-2.5 py-1 rounded-lg font-semibold cursor-pointer"
+                  style={{
+                    backgroundColor: "rgba(194,96,96,0.15)",
+                    color: "var(--error)",
+                    border: "1px solid rgba(194,96,96,0.3)",
+                  }}
                 >
                   Retry
                 </button>
               </div>
             )}
 
-            {/* TAB: DASHBOARD OVERVIEW */}
+            {/* ══ DASHBOARD ══════════════════════════════════════════════ */}
             {activeTab === "dashboard" && (
-              <div className="space-y-6 animate-in fade-in duration-200">
-                {/* Hero Header */}
-                <div className="p-6 sm:p-8 rounded-3xl glass-panel border border-indigo-500/20 relative overflow-hidden bg-gradient-to-br from-indigo-950/40 via-slate-900/60 to-purple-950/30">
-                  <div className="relative z-10 max-w-2xl space-y-3">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 border border-indigo-500/30 text-indigo-300">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                      <span>Ready to accelerate your learning</span>
-                    </div>
-                    <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
-                      Recallix — Your AI Lecture Companion
-                    </h1>
-                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                      Convert raw lecture notes into structured summaries, key concept breakdowns, and actionable study tasks. Ask questions grounded directly in your coursework.
-                    </p>
+              <div className="space-y-5 animate-in">
 
-                    <div className="pt-2 flex flex-wrap gap-3">
+                {/* ── Hero ── */}
+                <div
+                  className="rounded-xl overflow-hidden"
+                  style={{
+                    backgroundColor: "var(--hero-bg)",
+                    border: "1px solid var(--hero-border)",
+                  }}
+                >
+                  <div
+                    className="h-0.5 w-full"
+                    style={{ backgroundColor: "var(--hero-bar)" }}
+                  />
+                  <div className="px-5 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+                    <div className="space-y-2 flex-1 min-w-0">
+                      <h1
+                        className="text-lg font-semibold"
+                        style={{ color: "var(--text-primary)", letterSpacing: "-0.02em" }}
+                      >
+                        Study Workspace
+                      </h1>
+                      <p className="text-xs leading-relaxed max-w-sm" style={{ color: "var(--text-muted)" }}>
+                        Paste your lecture notes and Recallix generates structured summaries, maps key concepts, and creates actionable study tasks — powered by Gemma.
+                      </p>
+                      {/* Quick stats inline */}
+                      {totalLectures > 0 && (
+                        <div className="flex items-center gap-4 pt-1">
+                          <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                            <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                              {totalLectures}
+                            </span>{" "}
+                            {totalLectures === 1 ? "lecture" : "lectures"}
+                          </span>
+                          <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                            <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                              {totalConcepts}
+                            </span>{" "}
+                            concepts
+                          </span>
+                          {totalTasks > 0 && (
+                            <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                              <span className="font-semibold" style={{ color: pendingTasks.length === 0 ? "var(--success)" : "var(--text-primary)" }}>
+                                {pendingTasks.length}
+                              </span>{" "}
+                              pending tasks
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => setIsUploadOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
+                        className="btn-primary flex items-center gap-1.5 px-3.5 py-2 text-xs"
                       >
-                        <Plus className="w-4 h-4" />
-                        <span>Add Lecture Notes</span>
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Lecture</span>
                       </button>
-
                       <button
                         onClick={() => setActiveTab("chat")}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-900/80 hover:bg-slate-800 text-indigo-300 border border-indigo-500/30 transition-all cursor-pointer"
+                        className="btn-secondary flex items-center gap-1.5 px-3.5 py-2 text-xs"
                       >
-                        <Brain className="w-4 h-4 text-purple-400" />
-                        <span>Ask Grounded Q&A</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        <MessageSquareText className="w-3.5 h-3.5" />
+                        <span>Ask Q&A</span>
                       </button>
                     </div>
                   </div>
-
-                  <div className="absolute right-0 bottom-0 translate-x-12 translate-y-12 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
                 </div>
 
-                {/* Stats Grid */}
+                {/* ── Stats ── */}
                 <StatsGrid
                   totalLectures={totalLectures}
                   totalConcepts={totalConcepts}
@@ -296,87 +378,64 @@ export default function DashboardPage() {
                   totalTasks={totalTasks}
                 />
 
-                {/* Split Overview: Recent Lectures & Urgent Tasks */}
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                  {/* Recent Lectures */}
-                  <div className="xl:col-span-2 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 text-indigo-400" />
-                        <h2 className="text-base font-bold text-white">
-                          Recent Lectures
-                        </h2>
-                      </div>
-                      <button
-                        onClick={() => setActiveTab("lectures")}
-                        className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1"
-                      >
-                        <span>View all ({totalLectures})</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
-                    </div>
-
+                {/* ── Overview grid ── */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+                  {/* Recent lectures (2/3 width) */}
+                  <div className="xl:col-span-2">
+                    <SectionHeader
+                      label="Recent Lectures"
+                      icon={BookOpen}
+                      action={() => setActiveTab("lectures")}
+                      actionLabel={`View all (${totalLectures})`}
+                    />
                     {loadingLectures ? (
-                      <div className="p-8 text-center glass-panel rounded-2xl border-slate-800">
-                        <RefreshCw className="w-6 h-6 text-indigo-400 animate-spin mx-auto mb-2" />
-                        <p className="text-xs text-slate-400">Loading lecture notes...</p>
-                      </div>
+                      <LoadingSlot />
                     ) : lectures.length === 0 ? (
-                      <div className="p-8 text-center glass-panel rounded-2xl border-slate-800">
-                        <BookOpen className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-                        <p className="text-sm font-semibold text-slate-300">
-                          No lecture notes added yet
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1 mb-4">
-                          Upload your first lecture note or transcript to begin.
-                        </p>
-                        <button
-                          onClick={() => setIsUploadOpen(true)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white"
-                        >
-                          Add Lecture
-                        </button>
-                      </div>
+                      <EmptyLectures onAdd={() => setIsUploadOpen(true)} />
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         {lectures.slice(0, 2).map((lecture) => (
                           <LectureCard
                             key={lecture.id}
                             lecture={lecture}
                             onToggleTask={handleToggleTask}
-                            onAskQuestion={handleAskQuestionFromLecture}
+                            onAskQuestion={() => setActiveTab("chat")}
                           />
                         ))}
                       </div>
                     )}
                   </div>
 
-                  {/* Right Column: Pending Action Items */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <h2 className="text-base font-bold text-white">
-                          Action Items
-                        </h2>
-                      </div>
-                      <button
-                        onClick={() => setActiveTab("tasks")}
-                        className="text-xs text-indigo-400 hover:text-indigo-300 font-medium"
-                      >
-                        View all
-                      </button>
-                    </div>
-
-                    <div className="p-4 rounded-2xl glass-panel border border-slate-800/80 space-y-3">
+                  {/* Pending tasks sidebar (1/3) */}
+                  <div>
+                    <SectionHeader
+                      label="Pending Tasks"
+                      icon={ListTodo}
+                      action={() => setActiveTab("tasks")}
+                      actionLabel="All tasks"
+                    />
+                    <div
+                      className="rounded-xl overflow-hidden"
+                      style={{
+                        backgroundColor: "var(--bg-card)",
+                        border: "1px solid var(--border-base)",
+                      }}
+                    >
                       {pendingTasks.length === 0 ? (
-                        <div className="py-6 text-center text-xs text-slate-400">
-                          <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto mb-2" />
-                          <span>All caught up! No pending study tasks.</span>
+                        <div
+                          className="py-8 px-4 text-center"
+                        >
+                          <CheckCircle2
+                            className="w-6 h-6 mx-auto mb-2"
+                            style={{ color: "var(--success)" }}
+                          />
+                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                            All caught up — no pending tasks.
+                          </p>
                         </div>
                       ) : (
-                        <div className="space-y-2">
-                          {pendingTasks.slice(0, 5).map((task) => {
+                        <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
+                          {pendingTasks.slice(0, 6).map((task) => {
                             const parentLec = lectures.find((l) =>
                               l.action_items.some((i) => i.id === task.id)
                             );
@@ -384,19 +443,31 @@ export default function DashboardPage() {
                               <div
                                 key={task.id}
                                 onClick={() => {
-                                  if (parentLec) {
-                                    handleToggleTask(parentLec.id, task.id, true);
-                                  }
+                                  if (parentLec) handleToggleTask(parentLec.id, task.id, true);
                                 }}
-                                className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/60 border border-slate-800/60 transition-colors cursor-pointer text-xs"
+                                className="flex items-start gap-2.5 px-3.5 py-3 cursor-pointer transition-colors"
+                                style={{ borderColor: "var(--border-subtle)" }}
+                                onMouseEnter={(e) =>
+                                  ((e.currentTarget as HTMLElement).style.backgroundColor = "var(--bg-elevated)")
+                                }
+                                onMouseLeave={(e) =>
+                                  ((e.currentTarget as HTMLElement).style.backgroundColor = "transparent")
+                                }
                               >
-                                <Circle className="w-4 h-4 text-slate-500 hover:text-emerald-400 shrink-0 mt-0.5" />
-                                <div className="space-y-0.5 flex-1">
-                                  <p className="text-slate-200 leading-snug">
+                                <Circle
+                                  className="w-3.5 h-3.5 mt-0.5 shrink-0"
+                                  style={{ color: "var(--text-muted)" }}
+                                  strokeWidth={1.75}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs leading-snug" style={{ color: "var(--text-secondary)" }}>
                                     {task.task}
                                   </p>
                                   {parentLec && (
-                                    <span className="text-[10px] text-indigo-400 font-medium">
+                                    <span
+                                      className="text-[10px] font-medium mt-0.5 inline-block"
+                                      style={{ color: "var(--accent)" }}
+                                    >
                                       {parentLec.subject}
                                     </span>
                                   )}
@@ -412,40 +483,43 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* TAB: LECTURES LIST */}
+            {/* ══ LECTURES ═══════════════════════════════════════════════ */}
             {activeTab === "lectures" && (
-              <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="space-y-5 animate-in">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-xl font-bold text-white">
+                    <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
                       Lectures & Structured Summaries
                     </h2>
-                    <p className="text-xs text-slate-400">
-                      View full synthesis, core concepts, and raw transcripts.
+                    <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                      Full synthesis, core concepts, and raw transcripts.
                     </p>
                   </div>
                   <button
                     onClick={() => setIsUploadOpen(true)}
-                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer"
+                    className="btn-primary flex items-center gap-1.5 px-3.5 py-2 text-xs shrink-0"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>Upload New Lecture</span>
+                    <span>Upload Lecture</span>
                   </button>
                 </div>
 
                 {loadingLectures ? (
-                  <div className="p-12 text-center glass-panel rounded-2xl border-slate-800">
-                    <RefreshCw className="w-6 h-6 text-indigo-400 animate-spin mx-auto mb-2" />
-                    <p className="text-xs text-slate-400">Loading your lectures...</p>
-                  </div>
+                  <LoadingSlot />
                 ) : filteredLectures.length === 0 ? (
-                  <div className="p-12 text-center glass-panel rounded-2xl border-slate-800">
-                    <AlertCircle className="w-8 h-8 text-amber-400 mx-auto mb-2" />
-                    <p className="text-sm font-bold text-white">No lectures found</p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      {searchQuery
-                        ? `No lectures match "${searchQuery}".`
-                        : "No lectures have been ingested yet."}
+                  <div
+                    className="p-10 text-center rounded-xl"
+                    style={{
+                      backgroundColor: "var(--bg-card)",
+                      border: "1px solid var(--border-base)",
+                    }}
+                  >
+                    <AlertCircle className="w-7 h-7 mx-auto mb-2" style={{ color: "var(--warning)" }} />
+                    <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                      {searchQuery ? `No results for "${searchQuery}"` : "No lectures yet"}
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                      {searchQuery ? "Try a different search term." : "Upload your first lecture to get started."}
                     </p>
                   </div>
                 ) : (
@@ -455,7 +529,7 @@ export default function DashboardPage() {
                         key={lecture.id}
                         lecture={lecture}
                         onToggleTask={handleToggleTask}
-                        onAskQuestion={handleAskQuestionFromLecture}
+                        onAskQuestion={() => setActiveTab("chat")}
                       />
                     ))}
                   </div>
@@ -463,64 +537,93 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* TAB: ACTION ITEMS */}
+            {/* ══ TASKS ══════════════════════════════════════════════════ */}
             {activeTab === "tasks" && (
-              <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="space-y-5 animate-in">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl font-bold text-white">
-                      Actionable Study Tasks
+                    <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
+                      Study Tasks
                     </h2>
-                    <p className="text-xs text-slate-400">
-                      Stay on top of assignments, problem sets, and targeted review topics.
+                    <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                      Assignments, problem sets, and targeted review items.
                     </p>
                   </div>
-                  <span className="text-xs font-mono text-emerald-400 bg-emerald-950/50 px-3 py-1 rounded-full border border-emerald-500/30">
-                    {completedTasks} / {totalTasks} Completed
+                  <span
+                    className="text-xs px-3 py-1 rounded-full font-semibold"
+                    style={{
+                      backgroundColor: "var(--success-bg)",
+                      border: "1px solid rgba(82,168,122,0.25)",
+                      color: "var(--success)",
+                    }}
+                  >
+                    {completedTasks} / {totalTasks} done
                   </span>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {lectures.map((lec) => (
                     <div
                       key={lec.id}
-                      className="p-5 rounded-2xl glass-panel border border-slate-800/80 space-y-3"
+                      className="rounded-xl overflow-hidden"
+                      style={{
+                        backgroundColor: "var(--bg-card)",
+                        border: "1px solid var(--border-base)",
+                      }}
                     >
-                      <div className="flex items-center justify-between border-b border-slate-800/60 pb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 text-[10px] font-semibold rounded bg-indigo-950 border border-indigo-500/30 text-indigo-300">
-                            {lec.subject}
-                          </span>
-                          <h3 className="text-sm font-bold text-white">
-                            {lec.title}
-                          </h3>
-                        </div>
+                      {/* Lecture header */}
+                      <div
+                        className="px-4 py-3 flex items-center gap-2.5"
+                        style={{ borderBottom: "1px solid var(--border-subtle)" }}
+                      >
+                        <span
+                          className="px-2 py-0.5 text-[11px] font-semibold rounded-md"
+                          style={{
+                            backgroundColor: "var(--accent-subtle)",
+                            color: "var(--accent)",
+                            border: "1px solid var(--accent-border)",
+                          }}
+                        >
+                          {lec.subject}
+                        </span>
+                        <h3 className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                          {lec.title}
+                        </h3>
                       </div>
 
-                      <div className="space-y-2">
+                      {/* Tasks */}
+                      <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
                         {lec.action_items.map((task) => (
                           <label
                             key={task.id}
-                            className={`flex items-start gap-2.5 p-2 rounded-lg transition-colors cursor-pointer text-xs ${
-                              task.completed
-                                ? "bg-slate-900/30 text-slate-500 line-through"
-                                : "bg-slate-900/60 hover:bg-slate-800/60 text-slate-200"
-                            }`}
+                            className="flex items-start gap-2.5 px-4 py-2.5 cursor-pointer transition-colors text-xs"
+                            style={task.completed ? { opacity: 0.45 } : {}}
+                            onMouseEnter={(e) => {
+                              if (!task.completed)
+                                (e.currentTarget as HTMLElement).style.backgroundColor = "var(--bg-elevated)";
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!task.completed)
+                                (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
+                            }}
                           >
                             <button
                               type="button"
-                              onClick={() =>
-                                handleToggleTask(lec.id, task.id, !task.completed)
-                              }
-                              className="mt-0.5 text-emerald-400 focus:outline-none"
+                              onClick={() => handleToggleTask(lec.id, task.id, !task.completed)}
+                              className="mt-0.5 shrink-0 focus:outline-none cursor-pointer"
                             >
                               {task.completed ? (
-                                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                <CheckCircle2 className="w-4 h-4" style={{ color: "var(--success)" }} />
                               ) : (
-                                <Circle className="w-4 h-4 text-slate-500 hover:text-emerald-400" />
+                                <Circle className="w-4 h-4" style={{ color: "var(--text-muted)" }} strokeWidth={1.75} />
                               )}
                             </button>
-                            <span className="flex-1">{task.task}</span>
+                            <span
+                              className={`flex-1 leading-snug ${task.completed ? "line-through" : ""}`}
+                              style={{ color: task.completed ? "var(--text-muted)" : "var(--text-secondary)" }}
+                            >
+                              {task.task}
+                            </span>
                           </label>
                         ))}
                       </div>
@@ -530,27 +633,23 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* TAB: ASK RECALLIX */}
+            {/* ══ CHAT ═══════════════════════════════════════════════════ */}
             {activeTab === "chat" && (
-              <div className="space-y-4 animate-in fade-in duration-200">
+              <div className="animate-in">
                 <LectureChat lectures={lectures} />
               </div>
             )}
 
-            {/* TAB: DIAGNOSTICS */}
+            {/* ══ DIAGNOSTICS ════════════════════════════════════════════ */}
             {activeTab === "diagnostics" && (
-              <div className="space-y-4 animate-in fade-in duration-200">
-                <DiagnosticsView
-                  backendStatus={backendStatus}
-                  onRefresh={handleManualRefresh}
-                />
+              <div className="animate-in">
+                <DiagnosticsView backendStatus={backendStatus} onRefresh={handleManualRefresh} />
               </div>
             )}
           </div>
         </div>
       </main>
 
-      {/* Upload Modal */}
       <UploadLectureModal
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}

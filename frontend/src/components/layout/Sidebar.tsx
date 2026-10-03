@@ -8,7 +8,6 @@ import {
   MessageSquareText,
   Activity,
   Cpu,
-  Sparkles,
 } from "lucide-react";
 
 export type NavTab = "dashboard" | "lectures" | "tasks" | "chat" | "diagnostics";
@@ -27,11 +26,7 @@ export const Sidebar: React.FC<Props> = ({
   pendingTasksCount,
 }) => {
   const navItems = [
-    {
-      id: "dashboard" as NavTab,
-      label: "Overview",
-      icon: LayoutDashboard,
-    },
+    { id: "dashboard" as NavTab, label: "Overview", icon: LayoutDashboard },
     {
       id: "lectures" as NavTab,
       label: "Lectures & Notes",
@@ -43,85 +38,106 @@ export const Sidebar: React.FC<Props> = ({
       label: "Action Items",
       icon: CheckSquare,
       badge: pendingTasksCount > 0 ? String(pendingTasksCount) : undefined,
-      badgeColor: "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30",
+      badgePending: true,
     },
-    {
-      id: "chat" as NavTab,
-      label: "Ask Recallix",
-      icon: MessageSquareText,
-      sparkle: true,
-    },
-    {
-      id: "diagnostics" as NavTab,
-      label: "Backend Diagnostics",
-      icon: Activity,
-    },
+    { id: "chat" as NavTab, label: "Ask Recallix", icon: MessageSquareText },
+    { id: "diagnostics" as NavTab, label: "Diagnostics", icon: Activity },
   ];
 
   return (
-    <aside className="w-full lg:w-64 shrink-0 flex flex-col justify-between p-4 rounded-2xl glass-panel border-slate-800/80 mb-6 lg:mb-0">
-      <div className="space-y-6">
-        <div>
-          <p className="px-3 text-[11px] font-semibold tracking-wider text-slate-400 uppercase mb-2">
-            Navigation
-          </p>
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  id={`nav-item-${item.id}`}
-                  onClick={() => onTabChange(item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-indigo-600/20 text-indigo-200 border border-indigo-500/30 shadow-sm shadow-indigo-500/10"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon
-                      className={`w-4 h-4 ${
-                        isActive ? "text-indigo-400" : "text-slate-400"
-                      }`}
-                    />
-                    <span>{item.label}</span>
-                  </div>
+    <aside
+      className="w-full lg:w-52 shrink-0 flex flex-col rounded-xl mb-6 lg:mb-0 overflow-hidden"
+      style={{
+        backgroundColor: "var(--bg-sidebar)",
+        border: "1px solid var(--border-base)",
+      }}
+    >
+      {/* Nav items */}
+      <div className="flex-1 p-2 pt-3">
+        <p className="section-label px-2 pb-2">Navigation</p>
+        <nav className="space-y-0.5">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                id={`nav-item-${item.id}`}
+                onClick={() => onTabChange(item.id)}
+                className="w-full flex items-center justify-between px-2.5 py-2.5 rounded-lg text-[0.8125rem] font-medium transition-all cursor-pointer"
+                style={
+                  isActive
+                    ? {
+                        backgroundColor: "var(--accent-subtle)",
+                        color: "var(--accent)",
+                      }
+                    : { color: "var(--text-secondary)" }
+                }
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = "var(--bg-elevated)";
+                    (e.currentTarget as HTMLElement).style.color = "var(--text-primary)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = "";
+                    (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Icon
+                    className="w-[15px] h-[15px] shrink-0"
+                    strokeWidth={isActive ? 2.2 : 1.75}
+                  />
+                  <span className="truncate">{item.label}</span>
+                </div>
 
-                  <div className="flex items-center gap-1.5">
-                    {item.sparkle && (
-                      <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                    )}
-                    {item.badge && (
-                      <span
-                        className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
-                          item.badgeColor ||
-                          "bg-slate-800 text-slate-300 border border-slate-700"
-                        }`}
-                      >
-                        {item.badge}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+                {item.badge && (
+                  <span
+                    className="px-1.5 py-0.5 text-[10px] rounded-md font-semibold shrink-0 ml-1.5"
+                    style={
+                      item.badgePending
+                        ? {
+                            backgroundColor: "var(--warning-bg)",
+                            color: "var(--warning)",
+                            border: "1px solid rgba(196,154,74,0.2)",
+                          }
+                        : {
+                            backgroundColor: "var(--bg-elevated)",
+                            color: "var(--text-secondary)",
+                            border: "1px solid var(--border-base)",
+                          }
+                    }
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
       </div>
 
-      {/* Model Spec Card */}
-      <div className="mt-6 pt-4 border-t border-slate-800/80">
-        <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-xs">
-          <div className="flex items-center gap-2 text-slate-300 font-medium mb-1">
-            <Cpu className="w-3.5 h-3.5 text-purple-400" />
-            <span>AI Architecture</span>
-          </div>
-          <p className="text-[11px] text-slate-400 leading-relaxed">
-            FastAPI + SQLite backbone with Gemma (via Ollama) integration pipeline ready.
-          </p>
+      {/* Footer: AI stack info */}
+      <div
+        className="m-2 p-3 rounded-lg"
+        style={{
+          backgroundColor: "var(--bg-elevated)",
+          border: "1px solid var(--border-subtle)",
+        }}
+      >
+        <div
+          className="flex items-center gap-2 text-xs font-medium mb-1"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          <Cpu className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--accent)" }} />
+          <span>AI Stack</span>
         </div>
+        <p className="text-[11px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
+          FastAPI · SQLite · Gemma via Ollama
+        </p>
       </div>
     </aside>
   );

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { CreateLectureInput } from "@/types/lecture";
-import { X, Sparkles, UploadCloud } from "lucide-react";
+import { X, UploadCloud, Zap } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
@@ -29,9 +29,9 @@ export const UploadLectureModal: React.FC<Props> = ({
     setSubject("Operating Systems");
     setRawNotes(
       "Virtual memory abstracts physical DRAM using a hierarchical page table. " +
-      "TLB (Translation Lookaside Buffer) acts as a high-speed associative hardware cache for virtual-to-physical address mappings. " +
-      "When a page is not present in physical frames, MMU raises a Page Fault trap to the OS kernel. " +
-      "The page replacement algorithm (e.g. LRU or Clock) selects a victim frame, writes back if dirty, and loads the demanded page from disk."
+        "TLB (Translation Lookaside Buffer) acts as a high-speed associative hardware cache for virtual-to-physical address mappings. " +
+        "When a page is not present in physical frames, MMU raises a Page Fault trap to the OS kernel. " +
+        "The page replacement algorithm (e.g. LRU or Clock) selects a victim frame, writes back if dirty, and loads the demanded page from disk."
     );
   };
 
@@ -41,144 +41,184 @@ export const UploadLectureModal: React.FC<Props> = ({
       setError("Please fill out all required fields.");
       return;
     }
-
     setError(null);
     try {
-      await onSubmit({
-        title: title.trim(),
-        subject: subject.trim(),
-        raw_notes: rawNotes.trim(),
-      });
-      setTitle("");
-      setSubject("");
-      setRawNotes("");
+      await onSubmit({ title: title.trim(), subject: subject.trim(), raw_notes: rawNotes.trim() });
+      setTitle(""); setSubject(""); setRawNotes("");
       onClose();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to create lecture note.";
-      setError(message);
+      setError(err instanceof Error ? err.message : "Failed to create lecture note.");
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-xl rounded-2xl glass-panel border border-slate-700/80 shadow-2xl p-6 relative">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.80)" }}
+    >
+      <div
+        className="w-full max-w-xl rounded-xl shadow-2xl relative animate-in overflow-hidden"
+        style={{
+          backgroundColor: "var(--bg-elevated)",
+          border: "1px solid var(--border-base)",
+        }}
+      >
+        {/* Top accent bar */}
+        <div className="h-0.5 w-full" style={{ backgroundColor: "var(--accent)" }} />
 
-        {/* Modal Header */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className="p-2.5 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 shadow-md">
-            <UploadCloud className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-white">Ingest Lecture Notes</h2>
-            <p className="text-xs text-slate-400">
-              Convert raw transcripts into structured summaries, key concepts, and study tasks.
-            </p>
-          </div>
-        </div>
-
-        {/* Pre-fill Quick Button */}
-        <div className="mb-4 flex items-center justify-between p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-500/20 text-xs">
-          <span className="text-slate-300">Need sample notes to test right away?</span>
+        <div className="p-6">
+          {/* Close */}
           <button
-            type="button"
-            onClick={handlePreFill}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 font-semibold cursor-pointer transition-colors"
+            onClick={onClose}
+            className="btn-ghost absolute top-4 right-4 p-1.5"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>Load Sample</span>
+            <X className="w-4 h-4" />
           </button>
-        </div>
 
-        {error && (
-          <div className="mb-4 p-2.5 rounded-lg bg-rose-950/60 border border-rose-800/40 text-rose-300 text-xs">
-            {error}
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Lecture Title *
-              </label>
-              <input
-                id="lecture-title-input"
-                type="text"
-                placeholder="e.g. Distributed Consensus"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                className="w-full px-3 py-2 text-sm bg-slate-900/80 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-              />
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-5">
+            <div
+              className="p-2.5 rounded-lg"
+              style={{ backgroundColor: "var(--accent-subtle)", color: "var(--accent)" }}
+            >
+              <UploadCloud className="w-5 h-5" strokeWidth={2} />
             </div>
-
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Subject / Course *
-              </label>
-              <input
-                id="lecture-subject-input"
-                type="text"
-                placeholder="e.g. Computer Systems"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                required
-                className="w-full px-3 py-2 text-sm bg-slate-900/80 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-              />
+              <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                Ingest Lecture Notes
+              </h2>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                Convert raw transcripts into summaries, concepts, and tasks.
+              </p>
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
-              Lecture Notes / Transcript *
-            </label>
-            <textarea
-              id="lecture-notes-textarea"
-              rows={5}
-              placeholder="Paste raw bullet points, transcript, or lecture takeaways..."
-              value={rawNotes}
-              onChange={(e) => setRawNotes(e.target.value)}
-              required
-              className="w-full px-3 py-2 text-sm bg-slate-900/80 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+          {/* Sample prefill */}
+          <div
+            className="mb-4 flex items-center justify-between px-3 py-2.5 rounded-lg"
+            style={{
+              backgroundColor: "var(--bg-card)",
+              border: "1px solid var(--border-base)",
+            }}
+          >
+            <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+              Want to test with sample notes?
+            </span>
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+              onClick={handlePreFill}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors"
+              style={{
+                backgroundColor: "var(--accent-subtle)",
+                color: "var(--accent)",
+                border: "1px solid var(--accent-border)",
+              }}
+              onMouseEnter={(e) =>
+                ((e.currentTarget as HTMLElement).style.backgroundColor = "rgba(78,158,138,0.18)")
+              }
+              onMouseLeave={(e) =>
+                ((e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent-subtle)")
+              }
             >
-              Cancel
-            </button>
-            <button
-              id="submit-lecture-btn"
-              type="submit"
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50 cursor-pointer"
-            >
-              {loading ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Processing...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 text-amber-300" />
-                  <span>Synthesize with AI</span>
-                </>
-              )}
+              <Zap className="w-3.5 h-3.5" />
+              <span>Load Sample</span>
             </button>
           </div>
-        </form>
+
+          {/* Error */}
+          {error && (
+            <div
+              className="mb-4 px-3 py-2.5 rounded-lg text-xs"
+              style={{
+                backgroundColor: "var(--error-bg)",
+                border: "1px solid rgba(194,96,96,0.2)",
+                color: "var(--error)",
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
+                  Lecture Title *
+                </label>
+                <input
+                  id="lecture-title-input"
+                  type="text"
+                  placeholder="e.g. Distributed Consensus"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                  className="input-base w-full px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
+                  Subject / Course *
+                </label>
+                <input
+                  id="lecture-subject-input"
+                  type="text"
+                  placeholder="e.g. Computer Systems"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  required
+                  className="input-base w-full px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
+                Lecture Notes / Transcript *
+              </label>
+              <textarea
+                id="lecture-notes-textarea"
+                rows={5}
+                placeholder="Paste raw bullet points, transcript, or lecture takeaways…"
+                value={rawNotes}
+                onChange={(e) => setRawNotes(e.target.value)}
+                required
+                className="input-base w-full px-3 py-2 text-sm resize-none"
+              />
+            </div>
+
+            <div
+              className="flex items-center justify-end gap-3 pt-3"
+              style={{ borderTop: "1px solid var(--border-base)" }}
+            >
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn-ghost px-4 py-2 text-xs font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                id="submit-lecture-btn"
+                type="submit"
+                disabled={loading}
+                className="btn-primary flex items-center gap-2 px-4 py-2 text-xs"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                    <span>Processing…</span>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-3.5 h-3.5" />
+                    <span>Synthesize with AI</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
