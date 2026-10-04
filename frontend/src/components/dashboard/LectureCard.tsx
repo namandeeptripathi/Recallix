@@ -148,8 +148,14 @@ export const LectureCard: React.FC<Props> = ({
                 <pre className="font-mono text-xs whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>
                   {lecture.raw_notes}
                 </pre>
+              ) : lecture.summary ? (
+                <p>{lecture.summary}</p>
               ) : (
-                <p>{lecture.summary || "Summary processing…"}</p>
+                <p style={{ color: "var(--text-muted)", fontStyle: "italic" }}>
+                  {lecture.status === "ai_failed"
+                    ? "AI processing failed (Ollama was offline when this lecture was created). Raw notes are still available above."
+                    : "Summary not yet available."}
+                </p>
               )}
             </div>
           </div>

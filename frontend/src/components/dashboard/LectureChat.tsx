@@ -155,10 +155,12 @@ export const LectureChat: React.FC<Props> = ({ lectures }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--success)" }}>
-            <CheckCircle className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Live</span>
-          </div>
+          {safeSelectedId && (
+            <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--success)" }}>
+              <CheckCircle className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Ready</span>
+            </div>
+          )}
         </div>
 
         {/* Lecture selector */}
